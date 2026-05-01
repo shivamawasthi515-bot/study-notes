@@ -2,12 +2,20 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
+const mongoose = require('mongoose');
 const multer = require('multer');
+const rateLimit = require('express-rate-limit');
 const Note = require('../models/Note');
 const Subject = require('../models/Subject');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
+
+const writeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 50,
+  message: { message: 'Too many requests, please try again later.' }
+});
 
 // Multer config
 const storage = multer.diskStorage({
@@ -37,8 +45,11 @@ const upload = multer({
 });
 
 // GET /api/notes/:id/download - download note (check access)
-router.get('/:id/download', auth, async (req, res) => {
+router.get('/:id/download', writeLimiter, auth, async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid note ID' });
+    }
     const note = await Note.findById(req.params.id).populate('subject');
     if (!note) return res.status(404).json({ message: 'Note not found' });
 
@@ -66,12 +77,14 @@ router.get('/:id/download', auth, async (req, res) => {
 });
 
 // POST /api/notes - upload note (admin)
-router.post('/', auth, adminAuth, upload.single('file'), async (req, res) => {
+router.post('/', writeLimiter, auth, adminAuth, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'File is required' });
 
     const { title, description, subjectId } = req.body;
-    if (!subjectId) return res.status(400).json({ message: 'Subject ID is required' });
+    if (!subjectId || !mongoose.Types.ObjectId.isValid(subjectId)) {
+      return res.status(400).json({ message: 'Valid Subject ID is required' });
+    }
 
     const subject = await Subject.findById(subjectId);
     if (!subject) return res.status(404).json({ message: 'Subject not found' });
@@ -96,8 +109,11 @@ router.post('/', auth, adminAuth, upload.single('file'), async (req, res) => {
 });
 
 // DELETE /api/notes/:id - delete note (admin)
-router.delete('/:id', auth, adminAuth, async (req, res) => {
+router.delete('/:id', writeLimiter, auth, adminAuth, async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid note ID' });
+    }
     const note = await Note.findById(req.params.id);
     if (!note) return res.status(404).json({ message: 'Note not found' });
 

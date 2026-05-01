@@ -1,8 +1,16 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
+const rateLimit = require('express-rate-limit');
 const Subject = require('../models/Subject');
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
+
+const writeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 50,
+  message: { message: 'Too many requests, please try again later.' }
+});
 
 // GET /api/subjects - list all subjects
 router.get('/', async (req, res) => {
@@ -62,7 +70,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/subjects - create subject (admin)
-router.post('/', auth, adminAuth, async (req, res) => {
+router.post('/', writeLimiter, auth, adminAuth, async (req, res) => {
   try {
     const { title, description, accessType, price, thumbnail } = req.body;
     const subject = await Subject.create({ title, description, accessType, price: price || 0, thumbnail: thumbnail || '' });
@@ -73,8 +81,11 @@ router.post('/', auth, adminAuth, async (req, res) => {
 });
 
 // PUT /api/subjects/:id - update subject (admin)
-router.put('/:id', auth, adminAuth, async (req, res) => {
+router.put('/:id', writeLimiter, auth, adminAuth, async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid subject ID' });
+    }
     const { title, description, accessType, price, thumbnail } = req.body;
     const subject = await Subject.findByIdAndUpdate(
       req.params.id,
@@ -89,8 +100,11 @@ router.put('/:id', auth, adminAuth, async (req, res) => {
 });
 
 // DELETE /api/subjects/:id - delete subject (admin)
-router.delete('/:id', auth, adminAuth, async (req, res) => {
+router.delete('/:id', writeLimiter, auth, adminAuth, async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid subject ID' });
+    }
     const subject = await Subject.findByIdAndDelete(req.params.id);
     if (!subject) return res.status(404).json({ message: 'Subject not found' });
     res.json({ message: 'Subject deleted' });

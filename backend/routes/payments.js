@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
 const Payment = require('../models/Payment');
 const Subject = require('../models/Subject');
@@ -17,7 +18,9 @@ const paymentLimiter = rateLimit({
 router.post('/create-checkout-session', paymentLimiter, auth, async (req, res) => {
   try {
     const { subjectId } = req.body;
-    if (!subjectId) return res.status(400).json({ message: 'Subject ID is required' });
+    if (!subjectId || !mongoose.Types.ObjectId.isValid(subjectId)) {
+      return res.status(400).json({ message: 'Valid Subject ID is required' });
+    }
 
     const subject = await Subject.findById(subjectId);
     if (!subject) return res.status(404).json({ message: 'Subject not found' });

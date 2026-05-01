@@ -1,9 +1,17 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
+const rateLimit = require('express-rate-limit');
 const Video = require('../models/Video');
 const Subject = require('../models/Subject');
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
+
+const writeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 50,
+  message: { message: 'Too many requests, please try again later.' }
+});
 
 // Extract YouTube video ID from URL (strict 11-char alphanumeric ID)
 const extractYoutubeId = (url) => {
@@ -53,11 +61,14 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/videos - add video (admin)
-router.post('/', auth, adminAuth, async (req, res) => {
+router.post('/', writeLimiter, auth, adminAuth, async (req, res) => {
   try {
     const { title, description, youtubeUrl, subjectId } = req.body;
     if (!youtubeUrl || !subjectId || !title) {
       return res.status(400).json({ message: 'Title, YouTube URL and Subject ID are required' });
+    }
+    if (!mongoose.Types.ObjectId.isValid(subjectId)) {
+      return res.status(400).json({ message: 'Invalid subject ID' });
     }
 
     const youtubeVideoId = extractYoutubeId(youtubeUrl);
@@ -86,8 +97,11 @@ router.post('/', auth, adminAuth, async (req, res) => {
 });
 
 // DELETE /api/videos/:id - delete video (admin)
-router.delete('/:id', auth, adminAuth, async (req, res) => {
+router.delete('/:id', writeLimiter, auth, adminAuth, async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid video ID' });
+    }
     const video = await Video.findById(req.params.id);
     if (!video) return res.status(404).json({ message: 'Video not found' });
 

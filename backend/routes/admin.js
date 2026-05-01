@@ -1,13 +1,20 @@
 const express = require('express');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
 const User = require('../models/User');
 const Subject = require('../models/Subject');
 const Payment = require('../models/Payment');
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
 
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { message: 'Too many requests, please try again later.' }
+});
+
 // GET /api/admin/dashboard - stats
-router.get('/dashboard', auth, adminAuth, async (req, res) => {
+router.get('/dashboard', adminLimiter, auth, adminAuth, async (req, res) => {
   try {
     const [totalUsers, totalSubjects, payments] = await Promise.all([
       User.countDocuments({ role: 'user' }),

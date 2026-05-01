@@ -92,7 +92,7 @@ router.post(
 );
 
 // GET /api/auth/me
-router.get('/me', auth, async (req, res) => {
+router.get('/me', authLimiter, auth, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password').populate('purchasedSubjects');
     res.json(user);
