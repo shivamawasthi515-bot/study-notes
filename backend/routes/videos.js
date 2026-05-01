@@ -5,11 +5,11 @@ const Subject = require('../models/Subject');
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
 
-// Extract YouTube video ID from URL
+// Extract YouTube video ID from URL (strict 11-char alphanumeric ID)
 const extractYoutubeId = (url) => {
   const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-    /youtube\.com\/shorts\/([^&\n?#]+)/
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/
   ];
   for (const pattern of patterns) {
     const match = url.match(pattern);

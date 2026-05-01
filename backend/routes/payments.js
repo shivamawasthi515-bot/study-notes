@@ -1,13 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const rateLimit = require('express-rate-limit');
 const Payment = require('../models/Payment');
 const Subject = require('../models/Subject');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 
+const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { message: 'Too many requests, please try again later.' }
+});
+
 // POST /api/payments/create-checkout-session
-router.post('/create-checkout-session', auth, async (req, res) => {
+router.post('/create-checkout-session', paymentLimiter, auth, async (req, res) => {
   try {
     const { subjectId } = req.body;
     if (!subjectId) return res.status(400).json({ message: 'Subject ID is required' });
@@ -63,7 +70,7 @@ router.post('/create-checkout-session', auth, async (req, res) => {
 });
 
 // GET /api/payments/verify/:sessionId
-router.get('/verify/:sessionId', auth, async (req, res) => {
+router.get('/verify/:sessionId', paymentLimiter, auth, async (req, res) => {
   try {
     const { sessionId } = req.params;
 
@@ -100,7 +107,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    return res.status(400).json({ message: 'Webhook signature verification failed' });
   }
 
   if (event.type === 'checkout.session.completed') {

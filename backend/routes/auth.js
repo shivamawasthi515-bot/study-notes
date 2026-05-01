@@ -2,8 +2,15 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
+const rateLimit = require('express-rate-limit');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  message: { message: 'Too many requests, please try again later.' }
+});
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '7d' });
@@ -12,6 +19,7 @@ const generateToken = (id) => {
 // POST /api/auth/register
 router.post(
   '/register',
+  authLimiter,
   [
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('email').isEmail().withMessage('Valid email is required'),
@@ -26,7 +34,7 @@ router.post(
     try {
       const { name, email, password } = req.body;
 
-      const existing = await User.findOne({ email });
+      const existing = await User.findOne({ email: String(email) });
       if (existing) {
         return res.status(400).json({ message: 'Email already registered' });
       }
@@ -47,6 +55,7 @@ router.post(
 // POST /api/auth/login
 router.post(
   '/login',
+  authLimiter,
   [
     body('email').isEmail().withMessage('Valid email is required'),
     body('password').notEmpty().withMessage('Password is required')
@@ -60,7 +69,7 @@ router.post(
     try {
       const { email, password } = req.body;
 
-      const user = await User.findOne({ email });
+      const user = await User.findOne({ email: String(email) });
       if (!user) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
