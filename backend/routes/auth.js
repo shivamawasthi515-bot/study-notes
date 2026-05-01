@@ -35,7 +35,7 @@ router.post(
     try {
       const { name, email, password } = req.body;
 
-      const existing = await User.findOne({ email });
+      const existing = await User.findOne({ email: String(email) });
       if (existing) {
         return res.status(400).json({ message: 'Email already registered' });
       }
@@ -70,7 +70,7 @@ router.post(
     try {
       const { email, password } = req.body;
 
-      const user = await User.findOne({ email });
+      const user = await User.findOne({ email: String(email) });
       if (!user) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }

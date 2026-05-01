@@ -77,7 +77,13 @@ router.get('/:id', async (req, res) => {
 router.post('/', writeLimiter, auth, adminAuth, async (req, res) => {
   try {
     const { title, description, accessType, price, thumbnail } = req.body;
-    const subject = await Subject.create({ title, description, accessType, price: price || 0, thumbnail: thumbnail || '' });
+    const subject = await Subject.create({
+      title: String(title || ''),
+      description: String(description || ''),
+      accessType: ['free', 'paid'].includes(accessType) ? accessType : 'free',
+      price: Number(price) || 0,
+      thumbnail: String(thumbnail || '')
+    });
     res.status(201).json(subject);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -91,9 +97,16 @@ router.put('/:id', writeLimiter, auth, adminAuth, async (req, res) => {
       return res.status(400).json({ message: 'Invalid subject ID' });
     }
     const { title, description, accessType, price, thumbnail } = req.body;
+    const update = {
+      title: String(title || ''),
+      description: String(description || ''),
+      accessType: ['free', 'paid'].includes(accessType) ? accessType : 'free',
+      price: Number(price) || 0,
+      thumbnail: String(thumbnail || '')
+    };
     const subject = await Subject.findByIdAndUpdate(
       req.params.id,
-      { title, description, accessType, price: price || 0, thumbnail: thumbnail || '' },
+      update,
       { new: true, runValidators: true }
     );
     if (!subject) return res.status(404).json({ message: 'Subject not found' });

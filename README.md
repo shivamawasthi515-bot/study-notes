@@ -80,7 +80,8 @@ npm start
 Register a normal user via `/register`, then update the role directly in MongoDB:
 
 ```js
-// In MongoDB shell or Compass
+// In MongoDB shell or Compass (run after connecting and switching to the correct database)
+use study-notes
 db.users.updateOne({ email: "admin@example.com" }, { $set: { role: "admin" } })
 ```
 

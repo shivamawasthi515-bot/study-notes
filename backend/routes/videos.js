@@ -40,7 +40,8 @@ router.get('/:id', async (req, res) => {
       if (authHeader && authHeader.startsWith('Bearer ')) {
         try {
           const jwt = require('jsonwebtoken');
-          const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET || 'fallback_secret');
+          if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is not configured');
+          const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
           const User = require('../models/User');
           const user = await User.findById(decoded.id);
           if (user && (user.role === 'admin' || user.purchasedSubjects.map(id => id.toString()).includes(subject._id.toString()))) {
