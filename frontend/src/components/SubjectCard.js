@@ -106,7 +106,7 @@ const SubjectCard = ({ subject }) => {
           <div style={styles.description}>{subject.description || 'No description available.'}</div>
           <div style={styles.footer}>
             <span style={isPaid ? styles.paidBadge : styles.freeBadge}>
-              {isPaid ? `$${subject.price.toFixed(2)}` : 'FREE'}
+              {isPaid ? `$${(subject.price ?? 0).toFixed(2)}` : 'FREE'}
             </span>
             <button style={styles.btn}>View</button>
           </div>

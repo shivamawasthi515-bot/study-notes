@@ -79,7 +79,7 @@ const ManageSubjects = () => {
                     {s.accessType}
                   </span>
                 </td>
-                <td style={styles.td}>{s.accessType === 'paid' ? `$${s.price.toFixed(2)}` : '—'}</td>
+                <td style={styles.td}>{s.accessType === 'paid' ? `$${(s.price ?? 0).toFixed(2)}` : '—'}</td>
                 <td style={styles.td}>{s.notes?.length || 0}</td>
                 <td style={styles.td}>{s.videos?.length || 0}</td>
                 <td style={styles.td}>

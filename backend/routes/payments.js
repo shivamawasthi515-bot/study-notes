@@ -103,7 +103,7 @@ router.get('/verify/:sessionId', paymentLimiter, auth, async (req, res) => {
 });
 
 // POST /api/payments/webhook - Stripe webhook
-router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+router.post('/webhook', async (req, res) => {
   const sig = req.headers['stripe-signature'];
   let event;
 

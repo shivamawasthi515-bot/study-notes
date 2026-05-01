@@ -13,7 +13,8 @@ const authLimiter = rateLimit({
 });
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '7d' });
+  if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is not configured');
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
 // POST /api/auth/register
@@ -34,7 +35,7 @@ router.post(
     try {
       const { name, email, password } = req.body;
 
-      const existing = await User.findOne({ email: String(email) });
+      const existing = await User.findOne({ email });
       if (existing) {
         return res.status(400).json({ message: 'Email already registered' });
       }
@@ -69,7 +70,7 @@ router.post(
     try {
       const { email, password } = req.body;
 
-      const user = await User.findOne({ email: String(email) });
+      const user = await User.findOne({ email });
       if (!user) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }

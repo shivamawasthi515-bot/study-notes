@@ -47,7 +47,9 @@ const AddVideo = () => {
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const videoId = extractYoutubeId(form.youtubeUrl);
+  const rawVideoId = extractYoutubeId(form.youtubeUrl);
+  // Only allow safe YouTube video IDs (11 alphanumeric chars, dashes, underscores)
+  const videoId = rawVideoId && /^[A-Za-z0-9_-]{11}$/.test(rawVideoId) ? rawVideoId : null;
 
   const handleSubmit = async e => {
     e.preventDefault();

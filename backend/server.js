@@ -52,7 +52,11 @@ app.use('/api/admin', adminRoutes);
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/study-notes')
+if (!process.env.MONGODB_URI) {
+  console.error('MONGODB_URI environment variable is required');
+  process.exit(1);
+}
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
 

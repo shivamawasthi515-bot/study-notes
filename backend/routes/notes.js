@@ -17,6 +17,12 @@ const writeLimiter = rateLimit({
   message: { message: 'Too many requests, please try again later.' }
 });
 
+const readLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { message: 'Too many requests, please try again later.' }
+});
+
 // Multer config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -45,7 +51,7 @@ const upload = multer({
 });
 
 // GET /api/notes/:id/download - download note (check access)
-router.get('/:id/download', writeLimiter, auth, async (req, res) => {
+router.get('/:id/download', readLimiter, auth, async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: 'Invalid note ID' });
